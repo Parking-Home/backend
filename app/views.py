@@ -1,7 +1,20 @@
-from flask import Flask
-from flask import render_template
+from flask import render_template, flash, redirect
+from app import app
+from .forms import LoginForm
 
-app = Flask(__name__)
+
+# функция представления index опущена для краткости
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        flash('Login requested for OpenID="' + form.openid.data + '", remember_me=' + str(form.remember_me.data))
+        return redirect('/posts')
+    return render_template('login.html',
+                           title='Sign In',
+                           form=form,
+                           providers=app.config['OPENID_PROVIDERS'])
 
 
 @app.route('/')
@@ -12,7 +25,7 @@ def hello_world():
 @app.route('/index')
 def index():
     user = {'nickname': 'Miguel'}  # выдуманный пользователь
-    return render_template("index.html",  user=user)
+    return render_template("index.html", user=user)
 
 
 @app.route('/posts')
@@ -32,7 +45,3 @@ def posts():
                            title='Home',
                            user=user,
                            posts=posts)
-
-
-if __name__ == '__main__':
-    app.run()
