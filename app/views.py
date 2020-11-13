@@ -1,6 +1,6 @@
 from flask import render_template, flash, redirect
 from app import app
-from .forms import LoginForm
+from app.view.forms import LoginForm
 
 
 # функция представления index опущена для краткости
