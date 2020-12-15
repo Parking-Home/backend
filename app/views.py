@@ -1,9 +1,13 @@
-from flask import render_template, flash, redirect
-from app import app
+from flask import render_template, flash, redirect, request
+from app import app, db
 from app.view.forms import LoginForm
+from app.model.Users import Users
+from app.model.Offers import Offers
+from app.model.Notifications import Notifications
+from app.model.ParkingPlaces import ParkingPlaces
+from app.model.Reservation import Reservation
+import json
 
-
-# функция представления index опущена для краткости
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -17,31 +21,36 @@ def login():
                            providers=app.config['OPENID_PROVIDERS'])
 
 
+@app.route('/post', methods=['POST'])
+def main():
+    # Создаем ответ
+    response = {
+        'session': request.json['session'],
+        'version': request.json['version'],
+        'response': {
+            'end_session': False
+        }
+    }
+    # Заполняем необходимую информацию
+    handle_dialog(response, request.json)
+    return json.dumps(response)
+
+
+def handle_dialog(res, req):
+    if req['request']['original_utterance']:
+        # Проверяем, есть ли содержимое
+        res['response']['text'] = req['request']['original_utterance']
+    else:
+        # Если это первое сообщение — представляемся
+        res['response']['text'] = "Я echo-bot, повторяю за тобой"
+
+
 @app.route('/')
 def hello_world():
-    return 'Hello World!'
+    return redirect('/post')
 
 
-@app.route('/index')
+@app.route('/home')
 def index():
     user = {'nickname': 'Miguel'}  # выдуманный пользователь
     return render_template("index.html", user=user)
-
-
-@app.route('/posts')
-def posts():
-    user = {'nickname': 'Miguel'}  # выдуманный пользователь
-    posts = [  # список выдуманных постов
-        {
-            'author': {'nickname': 'John'},
-            'body': 'Beautiful day in Portland!'
-        },
-        {
-            'author': {'nickname': 'Susan'},
-            'body': 'The Avengers movie was so cool!'
-        }
-    ]
-    return render_template("posts.html",
-                           title='Home',
-                           user=user,
-                           posts=posts)
