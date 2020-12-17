@@ -1,5 +1,6 @@
-from flask import render_template, flash, redirect, request
-from app import app, db
+from flask import render_template, flash, redirect, request, make_response, jsonify
+from app import app
+from app.database import database
 from app.view.forms import LoginForm
 from app.model.Users import Users
 from app.model.Offers import Offers
@@ -7,6 +8,17 @@ from app.model.Notifications import Notifications
 from app.model.ParkingPlaces import ParkingPlaces
 from app.model.Reservation import Reservation
 import json
+
+
+def make_bad_response():
+    response = {
+        "response": {
+            "text": "Что-то пошло не так, перезапустите приложение и попробуйте ещё раз",
+            "end_session": True
+        },
+        "version": "1.0"
+    }
+    return make_response(jsonify(response), 400)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -21,6 +33,24 @@ def login():
                            providers=app.config['OPENID_PROVIDERS'])
 
 
+@app.route('/api/web', methods=['POST'])
+def api_web():
+    if request.is_json:
+        req = request.get_json()
+        database.reserve_place(req)
+        response = {
+            "response": {
+                "text": "Запрос получен",
+                "end_session": False
+            },
+            "version": req.get("version")
+        }
+        res = make_response(jsonify(response), 200)
+    else:
+        res = make_bad_response()
+    return res
+
+
 @app.route('/post', methods=['POST'])
 def main():
     # Создаем ответ
@@ -33,7 +63,7 @@ def main():
     }
     # Заполняем необходимую информацию
     handle_dialog(response, request.json)
-    return json.dumps(response)
+    return make_response(response, 200)
 
 
 def handle_dialog(res, req):
@@ -48,6 +78,23 @@ def handle_dialog(res, req):
 @app.route('/')
 def hello_world():
     return redirect('/post')
+
+
+@app.route('/json', methods=["POST"])
+def json():
+    if request.is_json:
+        req = request.get_json()
+        response = {
+            "message": "Json received",
+            "name": req.get("name")
+        }
+        res = make_response(jsonify(response), 200)
+    else:
+        response = {
+            "message": "Json wasn't received",
+        }
+        res = make_response(jsonify(response), 400)
+    return res
 
 
 @app.route('/home')
