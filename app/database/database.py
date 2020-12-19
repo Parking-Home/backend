@@ -18,5 +18,6 @@ def get_data_for_reserve(req):
 
 def reserve_place(req):
     parking_place, dt, user_id = get_data_for_reserve(req)
-    reservation = Reservation(dt, user_id, parking_place)
-    db.session.add(reservation)
+    # reservation = Reservation(dt, user_id, parking_place)
+    # db.session.add(reservation)
+    return parking_place, dt, user_id

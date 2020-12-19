@@ -37,14 +37,24 @@ def login():
 def api_web():
     if request.is_json:
         req = request.get_json()
-        database.reserve_place(req)
-        response = {
-            "response": {
-                "text": "Запрос получен",
-                "end_session": False
-            },
-            "version": req.get("version")
-        }
+        if req.get("request").get("original_utterance"):
+            parking_place, dt, user_id = database.reserve_place(req)
+            response = {
+                "response": {
+                    "text": "Запрос получен. Вы назвали следующие данные: dt = " + str(dt) + ", user_id = " + str(user_id) + ", "
+                            "parking_place = " + str(parking_place),
+                    "end_session": False
+                },
+                "version": req.get("version")
+            }
+        else:
+            response = {
+                "response": {
+                    "text": "Назовите номер места и время брони",
+                    "end_session": False
+                },
+                "version": req.get("version")
+            }
         res = make_response(jsonify(response), 200)
     else:
         res = make_bad_response()
