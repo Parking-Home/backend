@@ -38,15 +38,26 @@ def api_web():
     if request.is_json:
         req = request.get_json()
         if req.get("request").get("original_utterance"):
-            parking_place, dt, user_id = database.reserve_place(req)
-            response = {
-                "response": {
-                    "text": "Запрос получен. Вы назвали следующие данные: dt = " + str(dt) + ", user_id = " + str(user_id) + ", "
-                            "parking_place = " + str(parking_place),
-                    "end_session": False
-                },
-                "version": req.get("version")
-            }
+            try:
+                parking_place, dt, user_id = database.reserve_place(req)
+                response = {
+                    "response": {
+                        "text": "Запрос получен. Вы назвали следующие данные: dt = " + str(dt) + ", user_id = " + str(
+                            user_id) + ", "
+                                       "parking_place = " + str(parking_place),
+                        "end_session": False
+                    },
+                    "version": req.get("version")
+                }
+            except KeyError:
+                response = {
+                    "response": {
+                        "text": "Пожалуйста, назовите время и место для парковки",
+                        "end_session": False
+                    },
+                    "version": req.get("version")
+                }
+                return make_response(jsonify(response), 400)
         else:
             response = {
                 "response": {

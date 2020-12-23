@@ -7,12 +7,19 @@ from app.model.Users import Users
 
 
 def get_data_for_reserve(req):
+    is_got_parking_place = False
+    is_got_dt = False
     user_id = req.get("session").get("user_id")
     for entity in req.get("request").get("nlu").get("entities"):
         if entity.get("type") == "YANDEX.NUMBER":
             parking_place = entity.get("value")
         if entity.get("type") == "YANDEX.DATETIME":
             dt = entity.get("value")
+
+    if dt is None:
+        raise KeyError
+    if parking_place is None:
+        parking_place = ParkingPlaces.query.first().id
     return parking_place, dt, user_id
 
 
