@@ -26,3 +26,7 @@ def get_intent(user_id):
 def delete_intent(user_id):
     if Intents.query.filter_by(user_id=user_id) is not None:
         Intents.query.filter_by(user_id=user_id).delete()
+
+
+def get_place():
+    return ParkingPlaces.query.filter_by(is_Free=1).first().id

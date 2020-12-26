@@ -56,7 +56,33 @@ def cancel_reservation_response(req, param):
     response = {
         "response": {
             "session": req.get("session"),
-            "text": param + " отменено"
-        }
+            "text": param + " отменено",
+            "end_session": False
+        },
+        "version": req.get("version")
+    }
+    return make_response(jsonify(response), 200)
+
+
+def choose_place_response(req):
+    response = {
+        "response": {
+            "session": req.get("session"),
+            "text": "Назовите номер места. Либо скажите 'любое'",
+            "end_session": False
+        },
+        "version": req.get("version")
+    }
+    return make_response(jsonify(response), 200)
+
+
+def choose_dt_response(req):
+    response = {
+        "response": {
+            "session": req.get("session"),
+            "text": "Назовите время окончания брони",
+            "end_session": False
+        },
+        "version": req.get("version")
     }
     return make_response(jsonify(response), 200)

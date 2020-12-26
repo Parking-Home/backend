@@ -21,7 +21,7 @@ def function():
     return render_template('mailru-domainyB8u9f6URadENYFY.html')
 
 
-@app.route('/api/web', methods=['GET', 'POST'])
+@app.route('/api/web', methods=['POST'])
 def api_web():
     return controller.handle_request(request)
 
