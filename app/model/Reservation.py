@@ -11,6 +11,7 @@ class Reservation(db.Model):
     def __repr__(self):
         return f"<reservation{self.id}>"
 
+
     def __init__(self, reservation_due, user_id, parking_place_id):
         self.reservation_due = reservation_due
         self.user_id = user_id

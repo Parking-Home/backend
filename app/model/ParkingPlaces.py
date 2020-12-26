@@ -7,8 +7,5 @@ class ParkingPlaces(db.Model):
     longitude = db.Column(db.Float, nullable=False)
     latitude = db.Column(db.Float, nullable=False)
 
-    def get_free_places(self):
-        return all()
-
     def __repr__(self):
         return f"<ParkingPlaces {self.id}>"

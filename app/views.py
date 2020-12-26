@@ -1,24 +1,7 @@
-from flask import render_template, flash, redirect, request, make_response, jsonify
+from flask import render_template, flash, redirect, request
 from app import app
-from app.database import database
+from app.controle import controller
 from app.view.forms import LoginForm
-from app.model.Users import Users
-from app.model.Offers import Offers
-from app.model.Notifications import Notifications
-from app.model.ParkingPlaces import ParkingPlaces
-from app.model.Reservation import Reservation
-import json
-
-
-def make_bad_response():
-    response = {
-        "response": {
-            "text": "Что-то пошло не так, перезапустите приложение и попробуйте ещё раз",
-            "end_session": True
-        },
-        "version": "1.0"
-    }
-    return make_response(jsonify(response), 400)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -33,89 +16,19 @@ def login():
                            providers=app.config['OPENID_PROVIDERS'])
 
 
-@app.route('/api/web', methods=['POST'])
+@app.route('/mailru-domainyB8u9f6URadENYFY.html')
+def function():
+    return render_template('mailru-domainyB8u9f6URadENYFY.html')
+
+
+@app.route('/api/web', methods=['GET', 'POST'])
 def api_web():
-    if request.is_json:
-        req = request.get_json()
-        if req.get("request").get("original_utterance"):
-            try:
-                parking_place, dt, user_id = database.reserve_place(req)
-                response = {
-                    "response": {
-                        "text": "Запрос получен. Вы назвали следующие данные: dt = " + str(dt) + ", user_id = " + str(
-                            user_id) + ", "
-                                       "parking_place = " + str(parking_place),
-                        "end_session": False
-                    },
-                    "version": req.get("version")
-                }
-            except KeyError:
-                response = {
-                    "response": {
-                        "text": "Пожалуйста, назовите время и место для парковки",
-                        "end_session": False
-                    },
-                    "version": req.get("version")
-                }
-                return make_response(jsonify(response), 400)
-        else:
-            response = {
-                "response": {
-                    "text": "Назовите номер места и время брони",
-                    "end_session": False
-                },
-                "version": req.get("version")
-            }
-        res = make_response(jsonify(response), 200)
-    else:
-        res = make_bad_response()
-    return res
-
-
-@app.route('/post', methods=['POST'])
-def main():
-    # Создаем ответ
-    response = {
-        'session': request.json['session'],
-        'version': request.json['version'],
-        'response': {
-            'end_session': False
-        }
-    }
-    # Заполняем необходимую информацию
-    handle_dialog(response, request.json)
-    return make_response(response, 200)
-
-
-def handle_dialog(res, req):
-    if req['request']['original_utterance']:
-        # Проверяем, есть ли содержимое
-        res['response']['text'] = req['request']['original_utterance']
-    else:
-        # Если это первое сообщение — представляемся
-        res['response']['text'] = "Я echo-bot, повторяю за тобой"
+    return controller.handle_request(request)
 
 
 @app.route('/')
 def hello_world():
-    return redirect('/post')
-
-
-@app.route('/json', methods=["POST"])
-def json():
-    if request.is_json:
-        req = request.get_json()
-        response = {
-            "message": "Json received",
-            "name": req.get("name")
-        }
-        res = make_response(jsonify(response), 200)
-    else:
-        response = {
-            "message": "Json wasn't received",
-        }
-        res = make_response(jsonify(response), 400)
-    return res
+    return redirect('/login')
 
 
 @app.route('/home')

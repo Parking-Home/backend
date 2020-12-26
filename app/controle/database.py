@@ -13,15 +13,15 @@ def get_data_for_reserve(req):
     for entity in req.get("request").get("nlu").get("entities"):
         if entity.get("type") == "YANDEX.NUMBER":
             parking_place = entity.get("value")
+            is_got_parking_place = True
         if entity.get("type") == "YANDEX.DATETIME":
             dt = entity.get("value")
-
-    if dt is None:
+            is_got_dt = True
+    if not is_got_parking_place:
+        parking_place = None
+    if not is_got_dt:
         raise KeyError
-    if parking_place is None:
-        parking_place = ParkingPlaces.query.first().id
     return parking_place, dt, user_id
-
 
 def reserve_place(req):
     parking_place, dt, user_id = get_data_for_reserve(req)
