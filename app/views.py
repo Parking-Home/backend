@@ -1,6 +1,6 @@
 from flask import render_template, flash, redirect, request
 from app import app
-from app.controle import controller
+from app.control import controller
 from app.view.forms import LoginForm
 
 
