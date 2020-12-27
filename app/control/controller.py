@@ -31,11 +31,24 @@ def book_place_handler(req):
 
 
 def confirm_handler(req):
-    intent = database.get_intent(user_id=req.get("session").get("user_id"))
+    user_id = req.get("session").get("user_id")
+    intent = database.get_intent(user_id=user_id)
     if (intent.dt is not None) and (intent.place is not None):
         if intent.intent == "book_place":
             database.reserve_place(intent.user_id, intent.place, intent.dt)
+            database.delete_intent(user_id)
             return responses.reservation_success_response(req, intent.place, intent.dt)
+
+        elif intent.intent == "extend_res":
+            database.refresh_reservation(user_id, intent.dt)
+            dt = intent.dt
+            database.delete_intent(user_id)
+            return responses.extend_success_response(req, dt)
+
+        elif intent.intent == "cancel_res":
+            database.delete_reservation(user_id)
+            database.delete_intent(user_id)
+            return responses.cancel_success_response(req)
 
 
 def reject_handler(req):
@@ -75,7 +88,7 @@ def book_place_ch_place_handler(req):
     intent = intent.intent
 
     if place_id.get("type") == "YANDEX.STRING":
-        place_id = database.get_place()
+        place_id = database.get_free_place()
     else:
         place_id = place_id.get("value")
 
@@ -104,6 +117,17 @@ def extend_res_handler(req):
         return responses.choose_new_dt_response(req)
 
 
+def cancel_res_handler(req):
+    user_id = req.get("session").get("user_id")
+
+    if not database.has_user_reserved_place(user_id):
+        return responses.no_reserved_place_resp(req)
+
+    place_id = database.get_reserved_place(user_id)
+
+    database.make_intent(user_id, place_id, None, "cancel_res")
+
+
 def handle_intents(req):
     intents = req.get("request").get("nlu").get("intents")
     for intent in intents:
@@ -128,7 +152,7 @@ def handle_intents(req):
         elif intent == "extend_res":
             return extend_res_handler(req)
         elif intent == "cancel_res":
-            return responses.no_functional_response(req)
+            return cancel_res_handler(req)
         elif intent == "free_spaces":
             return responses.no_functional_response(req)
         elif intent == "my_res":
