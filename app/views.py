@@ -1,9 +1,9 @@
-from flask import render_template, flash, redirect
+# coding: utf-8
+from flask import render_template, flash, redirect, request
 from app import app
+from app.control import controller
 from app.view.forms import LoginForm
 
-
-# функция представления index опущена для краткости
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -17,31 +17,22 @@ def login():
                            providers=app.config['OPENID_PROVIDERS'])
 
 
+@app.route('/mailru-domainyB8u9f6URadENYFY.html')
+def function():
+    return render_template('mailru-domainyB8u9f6URadENYFY.html')
+
+
+@app.route('/api/web', methods=['POST'])
+def api_web():
+    return controller.handle_request(request)
+
+
 @app.route('/')
 def hello_world():
-    return 'Hello World!'
+    return redirect('/login')
 
 
-@app.route('/index')
+@app.route('/home')
 def index():
-    user = {'nickname': 'Miguel'}  # выдуманный пользователь
+    user = {'nickname': 'Miguel'}
     return render_template("index.html", user=user)
-
-
-@app.route('/posts')
-def posts():
-    user = {'nickname': 'Miguel'}  # выдуманный пользователь
-    posts = [  # список выдуманных постов
-        {
-            'author': {'nickname': 'John'},
-            'body': 'Beautiful day in Portland!'
-        },
-        {
-            'author': {'nickname': 'Susan'},
-            'body': 'The Avengers movie was so cool!'
-        }
-    ]
-    return render_template("posts.html",
-                           title='Home',
-                           user=user,
-                           posts=posts)
