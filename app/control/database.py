@@ -8,8 +8,10 @@ from app.model.Intents import Intents
 from app.model.Users import Users
 
 
-def reserve_place(user_id, id, dt):
-    reservation = Reservation(dt, user_id, id)
+def reserve_place(user_id, place_id, dt):
+    place = ParkingPlaces.query.filter_by(place=place_id).first()
+    place.is_free = 0
+    reservation = Reservation(dt, user_id, place_id)
     db.session.add(reservation)
     db.session.commit()
 
@@ -24,17 +26,12 @@ def get_intent(user_id):
     return Intents.query.filter_by(user_id=user_id)
 
 
-def delete_intent(user_id):
-    if Intents.query.filter_by(user_id=user_id) is not None:
-        Intents.query.filter_by(user_id=user_id).delete()
-
-
 def get_free_place():
     return ParkingPlaces.query.filter_by(is_Free=1).first().id
 
 
 def has_user_reserved_place(user_id):
-    return Reservation.query.filter_by(user_id=user_id) is not None
+    return Reservation.query.filter_by(user_id=user_id).count() != 0
 
 
 def get_reserved_place(user_id):
@@ -49,3 +46,46 @@ def refresh_reservation(user_id, dt):
 
 def delete_reservation(user_id):
     Reservation.query.filter_by(user_id=user_id).delete()
+
+
+def is_authorized(user_id):
+    return Users.query.filter_by(id=user_id).count() != 0
+
+
+def create_new_user(user_id):
+    user = Users(user_id, user_id, user_id, user_id, user_id, user_id, 18, user_id)
+    db.session.add(user)
+    db.session.commit()
+
+
+def initialize_db():
+    for i in range(20):
+        place = ParkingPlaces(1)
+        db.session.add(place)
+    db.session.commit()
+    print("added")
+
+
+def refresh_time_intent(user_id, dt):
+    intent = Intents.query.filter_by(user_id=user_id).first()
+    intent.dt = dt
+    db.session.commit()
+
+
+def refresh_place_intent(user_id, place_id):
+    intent = Intents.query.filter_by(user_id=user_id).first()
+    intent.place = place_id
+    db.session.commit()
+
+
+def delete_intent(user_id):
+    Intents.query.filter_by(user_id=user_id).delete()
+    db.session.commit()
+
+
+def is_free_place(place_id):
+    return ParkingPlaces.query.filter_by(place=place_id).count() != 0
+
+
+def has_free_places():
+    return ParkingPlaces.query.filter_by(is_free=1).count() != 0

@@ -1,12 +1,13 @@
 # coding: utf-8
-from flask import make_response, jsonify
-from datetime import time
+
+from datetime import time, datetime
 from app.control import database
 from app.control import responses
-from app.model.Intents import Intents
 
 
 def book_place_handler(req):
+    if not database.has_free_places():
+        return responses.no_free_places(req)
     slots = req.get("request").get("nlu").get("intents").get("book_place").get("slots")
     user_id = req.get("session").get("user_id")
     place_id = None
@@ -16,17 +17,22 @@ def book_place_handler(req):
         if slot == "id":
             place_id = slot.get("value")
         if slot == "dt":
-            dt = time(hour=slot.get("value").get("hour"), minute=slot.get("value").get("minute"))
-
-    database.make_intent(user_id, place_id, dt, "book_place")
+            t = time(hour=slot.get("value").get("hour"), minute=slot.get("value").get("minute"))
+            dt = datetime.combine(date=datetime.today(), time=t)
 
     if (place_id is not None) and (dt is not None):
-        return responses.make_confirmation_response(req, place_id, dt)
+        if database.is_free_place(place_id):
+            database.make_intent(user_id, place_id, dt, "book_place")
+            return responses.make_confirmation_response(req, place_id, dt)
+        else:
+            return responses.place_reserved_response(req)
 
     elif (place_id is None) and (dt is not None):
+        database.make_intent(user_id, place_id, dt, "book_place")
         return responses.choose_place_response(req)
 
     else:
+        database.make_intent(user_id, place_id, dt, "book_place")
         return responses.choose_dt_response(req)
 
 
@@ -40,7 +46,8 @@ def confirm_handler(req):
             return responses.reservation_success_response(req, intent.place, intent.dt)
 
         elif intent.intent == "extend_res":
-            database.refresh_reservation(user_id, intent.dt)
+            dt = datetime.combine(date=datetime.today(), time=intent.dt)
+            database.refresh_reservation(user_id, dt)
             dt = intent.dt
             database.delete_intent(user_id)
             return responses.extend_success_response(req, dt)
@@ -66,14 +73,13 @@ def reject_handler(req):
 def dt_handler(req):
     json_dt = req.get("request").get("nlu").get("intents").get("slots").get("dt")
     user_id = req.get("session").get("user_id")
-    dt = time(hour=json_dt.get("value").get("hour"), minute=json_dt.get("value").get("minute"))
+    t = time(hour=json_dt.get("value").get("hour"), minute=json_dt.get("value").get("minute"))
+    dt = datetime.combine(date=datetime.today(), time=t)
 
     intent = database.get_intent(user_id)
     place_id = intent.place
-    intent = intent.intent
 
-    database.delete_intent(user_id)
-    database.make_intent(user_id, place_id, dt, intent)
+    database.refresh_time_intent(user_id, dt)
     if place_id is not None:
         return responses.make_confirmation_response(req, place_id, dt)
     else:
@@ -85,15 +91,13 @@ def book_place_ch_place_handler(req):
     place_id = req.get("request").get("nlu").get("intents").get("slots").get("id")
     intent = database.get_intent(user_id)
     dt = intent.dt
-    intent = intent.intent
 
     if place_id.get("type") == "YANDEX.STRING":
         place_id = database.get_free_place()
     else:
         place_id = place_id.get("value")
 
-    database.delete_intent(user_id)
-    database.make_intent(user_id, place_id, dt, intent)
+    database.refresh_place_intent(user_id, place_id)
     return responses.make_confirmation_response(req, place_id, dt)
 
 
@@ -108,7 +112,8 @@ def extend_res_handler(req):
     reserved_place = database.get_reserved_place(user_id)
 
     if slots.get("dt") is not None:
-        dt = time(slots.get("dt").get("value").get("hour"), slots.get("dt").get("value").get("minute"))
+        t = time(slots.get("dt").get("value").get("hour"), slots.get("dt").get("value").get("minute"))
+        dt = datetime.combine(date=datetime.today(), time=t)
         database.make_intent(user_id, reserved_place, dt, "extend_res")
         return responses.confirmation_extend_response(req, dt)
     else:
@@ -126,6 +131,15 @@ def cancel_res_handler(req):
     place_id = database.get_reserved_place(user_id)
 
     database.make_intent(user_id, place_id, None, "cancel_res")
+
+
+def initialising_handler(req):
+    user_id = req.get("session").get("user_id")
+    if not database.is_authorized(user_id):
+        database.create_new_user(user_id)
+
+    # database.initialize_db()
+    return responses.no_intents_response(req)
 
 
 def handle_intents(req):
@@ -157,7 +171,7 @@ def handle_intents(req):
             return responses.no_functional_response(req)
         elif intent == "my_res":
             return responses.no_functional_response(req)
-    return responses.no_intents_response(req)
+    return initialising_handler(req)
 
 
 def handle_request(request):

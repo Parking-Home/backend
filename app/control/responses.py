@@ -173,3 +173,27 @@ def cancel_success_response(req):
         "version": req.get("version")
     }
     return make_response(jsonify(response), 200)
+
+
+def place_reserved_response(req):
+    response = {
+        "response": {
+            "session": req.get("session"),
+            "text": "К сожалению, данное место занято",
+            "end_session": False
+        },
+        "version": req.get("version")
+    }
+    return make_response(jsonify(response), 200)
+
+
+def no_free_places(req):
+    response = {
+        "response": {
+            "session": req.get("session"),
+            "text": "К сожалению, свободных мест нет",
+            "end_session": False
+        },
+        "version": req.get("version")
+    }
+    return make_response(jsonify(response), 200)
