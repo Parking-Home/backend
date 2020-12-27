@@ -1,3 +1,4 @@
+# coding: utf-8
 from flask import render_template, flash, redirect, request
 from app import app
 from app.control import controller
@@ -33,5 +34,5 @@ def hello_world():
 
 @app.route('/home')
 def index():
-    user = {'nickname': 'Miguel'}  # выдуманный пользователь
+    user = {'nickname': 'Miguel'}
     return render_template("index.html", user=user)

@@ -1,3 +1,4 @@
+# coding: utf-8
 from flask import make_response, jsonify
 from datetime import time
 from app.control import database
@@ -104,14 +105,7 @@ def handle_intents(req):
         elif intent == "book_place_ch_place":
             return book_place_ch_place_handler(req)
 
-        # elif intent == "extend_res":
-        #     return extend_res_handler()
-        #
-        # elif intent == "cancel_res":
-        #     return cancel_res_handler()
-        #
-        # elif intent == "free_spaces":
-        #     return free_spaces_handler()
+    return responses.no_intents_response(req)
 
 
 def handle_request(request):

@@ -1,3 +1,4 @@
+# coding: utf-8
 from app import db
 from app.model.Notifications import Notifications
 from app.model.Offers import Offers

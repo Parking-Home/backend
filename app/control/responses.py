@@ -1,3 +1,4 @@
+# coding: utf-8
 from flask import make_response, jsonify
 
 
@@ -81,6 +82,19 @@ def choose_dt_response(req):
         "response": {
             "session": req.get("session"),
             "text": "Назовите время окончания брони",
+            "end_session": False
+        },
+        "version": req.get("version")
+    }
+    return make_response(jsonify(response), 200)
+
+
+def no_intents_response(req):
+    response = {
+        "response": {
+            "session": req.get("session"),
+            "text": "Привет, я помогу забронировать парковочное место.\n"
+                    "Назовите команду или скажите 'помощь', чтобы получить список доступных команд",
             "end_session": False
         },
         "version": req.get("version")
