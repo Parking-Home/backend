@@ -149,3 +149,27 @@ def choose_new_dt_response(req):
         "version": req.get("version")
     }
     return make_response(jsonify(response), 200)
+
+
+def extend_success_response(req, dt):
+    response = {
+        "response": {
+            "session": req.get("session"),
+            "text": "Бронь продлена до " + str(dt),
+            "end_session": False
+        },
+        "version": req.get("version")
+    }
+    return make_response(jsonify(response), 200)
+
+
+def cancel_success_response(req):
+    response = {
+        "response": {
+            "session": req.get("session"),
+            "text": "Ваша бронь снята",
+            "end_session": False
+        },
+        "version": req.get("version")
+    }
+    return make_response(jsonify(response), 200)
