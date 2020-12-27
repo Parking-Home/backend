@@ -84,6 +84,26 @@ def book_place_ch_place_handler(req):
     return responses.make_confirmation_response(req, place_id, dt)
 
 
+def extend_res_handler(req):
+    user_id = req.get("session").get("user_id")
+
+    if not database.has_user_reserved_place(user_id):
+        return responses.no_reserved_place_resp(req)
+
+    slots = req.get("request").get("nlu").get("intents").get("extend_res").get("slots")
+
+    reserved_place = database.get_reserved_place(user_id)
+
+    if slots.get("dt") is not None:
+        dt = time(slots.get("dt").get("value").get("hour"), slots.get("dt").get("value").get("minute"))
+        database.make_intent(user_id, reserved_place, dt, "extend_res")
+        return responses.confirmation_extend_response(req, dt)
+    else:
+        dt = None
+        database.make_intent(user_id, reserved_place, dt, "extend_res")
+        return responses.choose_new_dt_response(req)
+
+
 def handle_intents(req):
     intents = req.get("request").get("nlu").get("intents")
     for intent in intents:
@@ -105,6 +125,14 @@ def handle_intents(req):
         elif intent == "book_place_ch_place":
             return book_place_ch_place_handler(req)
 
+        elif intent == "extend_res":
+            return extend_res_handler(req)
+        elif intent == "cancel_res":
+            return responses.no_functional_response(req)
+        elif intent == "free_spaces":
+            return responses.no_functional_response(req)
+        elif intent == "my_res":
+            return responses.no_functional_response(req)
     return responses.no_intents_response(req)
 
 

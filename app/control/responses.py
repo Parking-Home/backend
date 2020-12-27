@@ -100,3 +100,52 @@ def no_intents_response(req):
         "version": req.get("version")
     }
     return make_response(jsonify(response), 200)
+
+
+def no_functional_response(req):
+    response = {
+        "response": {
+            "session": req.get("session"),
+            "text": "К сожалению, данный функционал на этом этапе разработки ещё не доступен.\n"
+                    "Наша команда разработчиков приносит свои глубочайшие извинения",
+            "end_session": False
+        },
+        "version": req.get("version")
+    }
+    return make_response(jsonify(response), 200)
+
+
+def no_reserved_place_resp(req):
+    response = {
+        "response": {
+            "session": req.get("session"),
+            "text": "У Вас нет забронированных мест",
+            "end_session": False
+        },
+        "version": req.get("version")
+    }
+    return make_response(jsonify(response), 200)
+
+
+def confirmation_extend_response(req, dt):
+    response = {
+        "response": {
+            "session": req.get("session"),
+            "text": "Продлить бронь до " + str(dt) + "?",
+            "end_session": False
+        },
+        "version": req.get("version")
+    }
+    return make_response(jsonify(response), 200)
+
+
+def choose_new_dt_response(req):
+    response = {
+        "response": {
+            "session": req.get("session"),
+            "text": "Назовите новое время окончания бронирования",
+            "end_session": False
+        },
+        "version": req.get("version")
+    }
+    return make_response(jsonify(response), 200)

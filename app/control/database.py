@@ -31,3 +31,11 @@ def delete_intent(user_id):
 
 def get_place():
     return ParkingPlaces.query.filter_by(is_Free=1).first().id
+
+
+def has_user_reserved_place(user_id):
+    return Reservation.query.filter_by(user_id=user_id) is not None
+
+
+def get_reserved_place(user_id):
+    return Reservation.query.filter_by(user_id=user_id).parking_place_id
