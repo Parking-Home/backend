@@ -53,6 +53,18 @@ def make_confirmation_response(req, place_id, dt):
     return make_response(jsonify(response), 200)
 
 
+def make_confirmation_response_res_cancel(req, place_id):
+    response = {
+        "response": {
+            "session": req.get("session"),
+            "text": "Сянть бронь с места " + str(place_id) + "?",
+            "end_session": False
+        },
+        "version": req.get("version")
+    }
+    return make_response(jsonify(response), 200)
+
+
 def cancel_reservation_response(req, param):
     response = {
         "response": {
