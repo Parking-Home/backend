@@ -3,7 +3,11 @@
 from datetime import time, datetime
 from app.control import database
 from app.control import responses
+from app.model.Intents import Intents
+from app import db
+import sys
 
+orig_stdout = sys.stdout
 
 def book_place_handler(req):
     if not database.has_free_places():
@@ -13,15 +17,52 @@ def book_place_handler(req):
     place_id = None
     dt = None
 
-    for slot in slots:
-        if slot == "id":
-            place_id = slot.get("value")
-        if slot == "dt":
-            t = time(hour=slot.get("value").get("hour"), minute=slot.get("value").get("minute"))
-            dt = datetime.combine(date=datetime.today(), time=t)
+    for slot_key, slot_value in slots.items():
+        with open("/var/www/webApp/ParkingAtHome/log.txt", "a") as file_object:
+            sys.stdout = file_object
+            print(slots)
+            sys.stdout = orig_stdout
+        if slot_key == "id":
+            place_id = slot_value.get("value")
+        if slot_key == "dt":
+            dtValueDict = slot_value.get("value")
+
+            tempMin = None
+            if ("minute" in dtValueDict):
+                if ("minute_is_relative" in dtValueDict and dtValueDict.get("minute_is_relative")):
+                    tempMin = datetime.now().minute + dtValueDict.get("minute")
+                else:
+                    tempMin = dtValueDict.get("minute")
+            else:
+                tempMin = datetime.now().minute
+
+            tempHour = None
+            if ("hour" in dtValueDict):
+                if ("hour_is_relative" in dtValueDict and dtValueDict.get("hour_is_relative")):
+                    tempHour = datetime.now().hour + dtValueDict.get("hour")
+                else:
+                    tempHour = dtValueDict.get("hour")
+            else:
+                tempHour = datetime.now().hour
+
+            tempDay = None
+            if ("day" in dtValueDict):
+                if ("day_is_relative" in dtValueDict and dtValueDict.get("day_is_relative")):
+                    tempDay = datetime.now().day + dtValueDict.get("day")
+                else:
+                    tempDay = dtValueDict.get("day")
+            else:
+                tempDay = datetime.now().day
+
+            t = time(hour=tempHour, minute=tempMin)
+            dt = datetime.combine(date=datetime(datetime.now().year, datetime.now().month, tempDay), time=t)
+
+    if (place_id is not None) and (not database.is_free_place(place_id)):
+        return responses.place_reserved_response(req)
 
     if (place_id is not None) and (dt is not None):
         if database.is_free_place(place_id):
+            
             database.make_intent(user_id, place_id, dt, "book_place")
             return responses.make_confirmation_response(req, place_id, dt)
         else:
@@ -38,12 +79,18 @@ def book_place_handler(req):
 
 def confirm_handler(req):
     user_id = req.get("session").get("user_id")
-    intent = database.get_intent(user_id=user_id)
+    intent = database.get_intent(user_id=user_id).first()
+    with open("/var/www/webApp/ParkingAtHome/log.txt", "a") as file_object:
+        sys.stdout = file_object
+        print("Intent: " + intent.intent)
+        sys.stdout = orig_stdout
     if (intent.dt is not None) and (intent.place is not None):
         if intent.intent == "book_place":
             database.reserve_place(intent.user_id, intent.place, intent.dt)
+            reservedPlace = intent.place
+            reservationTime = intent.dt
             database.delete_intent(user_id)
-            return responses.reservation_success_response(req, intent.place, intent.dt)
+            return responses.reservation_success_response(req, reservedPlace, reservationTime)
 
         elif intent.intent == "extend_res":
             dt = datetime.combine(date=datetime.today(), time=intent.dt)
@@ -52,10 +99,23 @@ def confirm_handler(req):
             database.delete_intent(user_id)
             return responses.extend_success_response(req, dt)
 
-        elif intent.intent == "cancel_res":
-            database.delete_reservation(user_id)
-            database.delete_intent(user_id)
-            return responses.cancel_success_response(req)
+    elif (intent.place is not None) and (intent.intent == "cancel_res"):
+        database.delete_reservation(user_id)
+
+        database.make_place_free(intent.place)
+        with open("/var/www/webApp/ParkingAtHome/log.txt", "a") as file_object:
+            sys.stdout = file_object
+            print("Deleted reservation")
+            sys.stdout = orig_stdout
+
+        database.delete_intent(user_id)
+
+        with open("/var/www/webApp/ParkingAtHome/log.txt", "a") as file_object:
+            sys.stdout = file_object
+            print("Deleted intent")
+            sys.stdout = orig_stdout
+
+        return responses.cancel_success_response(req)
 
 
 def reject_handler(req):
@@ -88,8 +148,8 @@ def dt_handler(req):
 
 def book_place_ch_place_handler(req):
     user_id = req.get("session").get("user_id")
-    place_id = req.get("request").get("nlu").get("intents").get("slots").get("id")
-    intent = database.get_intent(user_id)
+    place_id = req.get("request").get("nlu").get("intents").get("book_place_ch_place").get("slots").get("id")
+    intent = database.get_intent(user_id=user_id).first()
     dt = intent.dt
 
     if place_id.get("type") == "YANDEX.STRING":
@@ -126,11 +186,22 @@ def cancel_res_handler(req):
     user_id = req.get("session").get("user_id")
 
     if not database.has_user_reserved_place(user_id):
+        with open("/var/www/webApp/ParkingAtHome/log.txt", "a") as file_object:
+            sys.stdout = file_object
+            print("User has no reservations.")
+            sys.stdout = orig_stdout
         return responses.no_reserved_place_resp(req)
 
     place_id = database.get_reserved_place(user_id)
 
+    with open("/var/www/webApp/ParkingAtHome/log.txt", "a") as file_object:
+        sys.stdout = file_object
+        print("Place id:")
+        print(place_id)
+        sys.stdout = orig_stdout
+
     database.make_intent(user_id, place_id, None, "cancel_res")
+    return responses.make_confirmation_response_res_cancel(req, place_id)
 
 
 def initialising_handler(req):
@@ -138,7 +209,9 @@ def initialising_handler(req):
     if not database.is_authorized(user_id):
         database.create_new_user(user_id)
 
-    # database.initialize_db()
+    query = Intents.query.filter_by(user_id=user_id).delete()
+    db.session.commit()
+    #database.initialize_db()
     return responses.no_intents_response(req)
 
 

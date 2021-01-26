@@ -9,7 +9,7 @@ from app.model.Users import Users
 
 
 def reserve_place(user_id, place_id, dt):
-    place = ParkingPlaces.query.filter_by(place=place_id).first()
+    place = ParkingPlaces.query.filter_by(id=place_id).first()
     place.is_free = 0
     reservation = Reservation(dt, user_id, place_id)
     db.session.add(reservation)
@@ -27,7 +27,7 @@ def get_intent(user_id):
 
 
 def get_free_place():
-    return ParkingPlaces.query.filter_by(is_Free=1).first().id
+    return ParkingPlaces.query.filter_by(is_free=1).first().id
 
 
 def has_user_reserved_place(user_id):
@@ -35,17 +35,19 @@ def has_user_reserved_place(user_id):
 
 
 def get_reserved_place(user_id):
-    return Reservation.query.filter_by(user_id=user_id).parking_place_id
+    return Reservation.query.filter_by(user_id=user_id).first().parking_place_id
 
 
 def refresh_reservation(user_id, dt):
-    reservation = Reservation.query.filter_by(user_id=user_id)
+    reservation = Reservation.query.filter_by(user_id=user_id).first()
     reservation.reservation_due = dt
     db.session.commit()
 
 
 def delete_reservation(user_id):
-    Reservation.query.filter_by(user_id=user_id).delete()
+    res = Reservation.query.filter_by(user_id=user_id).delete()
+    db.session.commit()
+    return res
 
 
 def is_authorized(user_id):
@@ -84,8 +86,12 @@ def delete_intent(user_id):
 
 
 def is_free_place(place_id):
-    return ParkingPlaces.query.filter_by(place=place_id).count() != 0
+    return ParkingPlaces.query.filter_by(id=place_id).first().is_free == 1
 
+
+def make_place_free(place_id):
+    ParkingPlaces.query.filter_by(id=place_id).first().is_free = 1
+    db.session.commit()
 
 def has_free_places():
     return ParkingPlaces.query.filter_by(is_free=1).count() != 0
