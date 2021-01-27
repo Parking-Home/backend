@@ -93,7 +93,7 @@ def confirm_handler(req):
             return responses.reservation_success_response(req, reservedPlace, reservationTime)
 
         elif intent.intent == "extend_res":
-            dt = datetime.combine(date=datetime.today(), time=intent.dt)
+            dt = datetime.combine(date=datetime.today(), time=intent.dt.time())
             database.refresh_reservation(user_id, dt)
             dt = intent.dt
             database.delete_intent(user_id)
@@ -172,8 +172,38 @@ def extend_res_handler(req):
     reserved_place = database.get_reserved_place(user_id)
 
     if slots.get("dt") is not None:
-        t = time(slots.get("dt").get("value").get("hour"), slots.get("dt").get("value").get("minute"))
-        dt = datetime.combine(date=datetime.today(), time=t)
+        dtValueDict = slots.get("dt").get("value")
+
+        tempMin = None
+        if ("minute" in dtValueDict):
+            if ("minute_is_relative" in dtValueDict and dtValueDict.get("minute_is_relative")):
+                tempMin = datetime.now().minute + dtValueDict.get("minute")
+            else:
+                tempMin = dtValueDict.get("minute")
+        else:
+            tempMin = datetime.now().minute
+
+        tempHour = None
+        if ("hour" in dtValueDict):
+            if ("hour_is_relative" in dtValueDict and dtValueDict.get("hour_is_relative")):
+                tempHour = datetime.now().hour + dtValueDict.get("hour")
+            else:
+                tempHour = dtValueDict.get("hour")
+        else:
+            tempHour = datetime.now().hour
+
+        tempDay = None
+        if ("day" in dtValueDict):
+            if ("day_is_relative" in dtValueDict and dtValueDict.get("day_is_relative")):
+                tempDay = datetime.now().day + dtValueDict.get("day")
+            else:
+                tempDay = dtValueDict.get("day")
+        else:
+            tempDay = datetime.now().day
+
+        t = time(hour=tempHour, minute=tempMin)
+        dt = datetime.combine(date=datetime(datetime.now().year, datetime.now().month, tempDay), time=t)
+
         database.make_intent(user_id, reserved_place, dt, "extend_res")
         return responses.confirmation_extend_response(req, dt)
     else:
